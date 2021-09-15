@@ -1,0 +1,110 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+    text-align: center;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    height: 100vh;
+}
+
+.alert-area {
+    height: 10vh;
+    width: 60vh;
+    border: 1px dotted black;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+h1 {
+    font-family: 'Dosis', sans-serif;
+    font-size: 8vh;
+    margin: -10px;
+}
+
+h2 {
+    font-size: 2vh;   
+}
+
+p {
+    font-size: 2vh;
+    font-family: 'Dosis', sans-serif;
+}
+
+.grid {
+    border: 10px solid black;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    height: 60vh;
+    width: 60vh;
+}
+
+.cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.piece, .king {
+    height: 5.5vh;
+    width: 5.5vh;
+    border-radius: 50%;
+    border: 5px solid;
+}
+
+.king {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Dosis', sans-serif;
+    font-size: 3vh;
+}
+
+.king.playerTwo {
+    background-image: url('../img/white-king.svg');
+    background-size: 80%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.king.playerOne {
+    background-image: url('../img/black-king.svg');
+    background-size: 80%;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.playerOne {
+    background-color: black;
+    border-color: white;
+    color: white;
+}
+
+.playerTwo {
+    background-color: white;
+    border-color: black;
+    color: black;
+}
+
+
+.black {
+    background-color: darkgray;
+}
+
+button {
+    padding: 10px;
+    font-size: 2vh;
+    border-radius: 15px;
+    background-color: white;
+    font-family: 'Dosis', sans-serif;
+}
