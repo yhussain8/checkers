@@ -35,12 +35,31 @@ let isPieceInHand = false
 let pieceInHand = null
 let moveList = []
 
+// CLICK ON GRID
+
 function gridClick(eventObj) {
+
+    // if no piece is active, and piece itself is selected: 
+    //          f1. activate piece and tiles available for movement or capture
+    // else if piece is active,
+    //      if same piece is clicked on again,
+    //          f2. deactivate piece and tiles
+    //      else if one of the highlighted movement tiles is clicked on,
+    //          f3. move piece
+    //          f2. deactivate piece and tiles 
+    // else do nothing
+
     let targetElement = eventObj.target
     
     if (isPieceInHand) {
+
+        // if the player clicks the same piece he previously clicked on,
+        // 1. remove the dotted border style around the piece itself
+        // 2. remove the dotted border style around the tiles highlighting valid moves
         if (targetElement === pieceInHand) {
+            // 1.
             targetElement.style.borderStyle = 'double'
+            // 2.
             moveList.forEach(function(move) {
                 let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
                 destinationTile.style.borderStyle = ''
@@ -75,15 +94,8 @@ function gridClick(eventObj) {
 
         destinationTiles.forEach(function(destinationTile) {
             if (targetElement === destinationTile) {
-
-                // FANCY MOVE MAGIC HERE
-                // Move 'piece' div from one tile to the other
                 targetElement.appendChild(pieceInHand)
-
-                // Switch off pieceInHand values, dotted lines around piece and movement selection tiles
                 pieceInHand.style.borderStyle = 'double'
-
-
             }
         })
 
