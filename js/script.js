@@ -15,10 +15,10 @@ function renderGameState(gameState) {
     gameState.forEach(function(row, rowNumber) {
         row.forEach(function(cellValue, cellNumber) {
             let newDivElement = document.createElement('div')
-            if (cellValue === 1) newDivElement.className = 'piece playerOne'
-            if (cellValue === 2) newDivElement.className = 'king playerOne'
-            if (cellValue === -1) newDivElement.className = 'piece playerTwo'
-            if (cellValue === -2) newDivElement.className = 'king playerTwo'
+            if (cellValue === 1) newDivElement.className = 'piece man playerOne'
+            if (cellValue === 2) newDivElement.className = 'piece king playerOne'
+            if (cellValue === -1) newDivElement.className = 'piece man piece playerTwo'
+            if (cellValue === -2) newDivElement.className = 'piece king playerTwo'
             let targetTile = document.getElementById(`${rowNumber}-${cellNumber}`)
             targetTile.innerHTML = ''
             if (cellValue != 0) targetTile.appendChild(newDivElement)
@@ -29,77 +29,151 @@ function renderGameState(gameState) {
 renderGameState(currentGameState)
 
 let gridArea = document.querySelector('.grid')
-gridArea.addEventListener('click', pieceSelector)
+gridArea.addEventListener('click', gridClick)
 
-function pieceSelector(eventObj) {
-    eventObj.target.style.borderStyle = 'double dotted'
+let isPieceInHand = false
+let pieceInHand = null
+let moveList = []
+
+function gridClick(eventObj) {
+    let targetElement = eventObj.target
+    
+    if (isPieceInHand) {
+        if (targetElement === pieceInHand) {
+            targetElement.style.borderStyle = 'double'
+            moveList.forEach(function(move) {
+                let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
+                destinationTile.style.borderStyle = ''
+            })
+            isPieceInHand = false
+            pieceInHand = null
+        }
+
+        let destinationTiles = []
+        
+        moveList.forEach(function(move) {
+            let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
+            destinationTiles.push(destinationTile)
+        })
+
+        for (destinationTile of destinationTiles) {
+            if (targetElement === destinationTile) {
+                targetElement.appendChild(pieceInHand)
+
+                // Switch off dotted line around piece
+                pieceInHand.style.borderStyle = 'double'
+
+                // Switch off dotted line around each of the destination tiles
+                destinationTiles.forEach(function(destinationTile) {
+                    destinationTile.style.borderStyle = ''
+                })
+
+                console.log("FINISH!")
+                break
+            }
+        }
+
+        destinationTiles.forEach(function(destinationTile) {
+            if (targetElement === destinationTile) {
+
+                // FANCY MOVE MAGIC HERE
+                // Move 'piece' div from one tile to the other
+                targetElement.appendChild(pieceInHand)
+
+                // Switch off pieceInHand values, dotted lines around piece and movement selection tiles
+                pieceInHand.style.borderStyle = 'double'
+
+
+            }
+        })
+
+        return
+    }
+    
+    if (targetElement.classList.contains('piece')) {
+        pieceInHand = targetElement
+        isPieceInHand = true
+        
+        pieceInHand.style.borderStyle = 'dotted'
+        
+        let originTileLocation = pieceInHand.parentNode.id.split('-')
+        moveList = buildMoveList(originTileLocation[0], originTileLocation[1])
+        
+        moveList.forEach(function(move) {
+            let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
+            destinationTile.style.borderStyle = 'dotted'
+        })
+    }
 }
 
+function buildMoveList(rowInput, columnInput) {
+    
+    let row = Number(rowInput)
+    let column = Number(columnInput)
 
-// let experiementalGameState = [
-//     [0, -1, 0, -1, 0, -1, 0, -1],
-//     [-1, 0, -2, 0, -2, 0, -1, 0],
-//     [0, -1, 0, -1, 0, -1, 0, -1],
-//     [0, 0, 0, 0, 0, 0, 0, 0],
-//     [0, 1, 0, 2, 0, 1, 0, 1],
-//     [1, 0, 1, 0, 1, 0, 1, 0],
-//     [0, 1, 0, 1, 0, 1, 0, 1],
-//     [0, 0, 0, 0, 0, 0, 0, 0]
-// ]
+    let pieceType = currentGameState[row][column]
+    
+    let rowUp = row - 1
+    let rowDown = row + 1
+    let columnLeft = column - 1
+    let columnRight = column + 1
 
-// renderGameState(experiementalGameState)
+    let upLeft = [rowUp, columnLeft]
+    let upRight = [rowUp, columnRight]
+    let downLeft = [rowDown, columnLeft]
+    let downRight = [rowDown, columnRight]
 
-// let playerOnePiece = document.createElement("div")
-// playerOnePiece.className = "piece playerOne"
-// targetTile = document.getElementById("7-0")
-// targetTile.appendChild(playerOnePiece)
-// targetTile2 = document.getElementById("7-3")
-// targetTile2.appendChild(playerOne)
+    let moveUpLeft = moveAvailable(upLeft)
+    let moveUpRight = moveAvailable(upRight)
+    let moveDownLeft = moveAvailable(downLeft)
+    let moveDownRight = moveAvailable(downRight)
 
-// let playerOneTurn = true
-// let gameOver = false
-// let playerOnePieces = 16
-// let playerTwoPieces = 16
+    let moveList = []
 
-// let wrapper = document.querySelector('.wrapper')
+    if (moveUpLeft) moveList.push(upLeft)
+    if (moveUpRight) moveList.push(upRight)
+    if (moveDownLeft) moveList.push(downLeft)
+    if (moveDownRight) moveList.push(downRight)
 
-// wrapper.innerHTML = '<h1>THIS WORKS</h1>'
+    return moveList
+}
 
-// grid.forEach(function(row) {
-//     row.forEach(function(tile) {
-        
-//     })
-// })
+function moveAvailable(move) {
+    let row = move[0]
+    let column = move[1]
+    
+    if (row < 0 || row > 7) return false
+    if (column < 0 || column > 7) return false
+    if (currentGameState[row][column] === 0) return true
+    return false
+}
 
-// let grid = document.querySelector('.grid')
-// grid.addEventListener('click', movePiece)
+// NEW GAME BUTTON
 
-// let newGameButton = document.querySelector('button')
-// newGameButton.addEventListener('click', resetGame)
+let newGameButton = document.querySelector('button')
+newGameButton.addEventListener('click', resetGame)
 
-// let playerOneTurn = true
-// let pieceInHand = false
-// let pieceInHandID = null
-// let currentSpot = null
+function resetGame(eventObj) {
+    document.location.reload()
+}
 
-// function movePiece(eventObj) {
-//     targetObj = eventObj.target
-
-//     if (targetObj.classList.contains('piece')) {
-//         pieceInHand = true
-//         pieceInHandID = targetObj.id
-//         targetObj.style.backgroundColor = 'maroon'
-//         return
-//     }
-
-//     if (pieceInHand) {
-//         pieceBeingMoved = document.getElementById(pieceInHandID)
-//         targetObj.appendChild(pieceBeingMoved)
-//         pieceInHand = false
-//         pieceBeingMoved.style.backgroundColor = 'black'
-//     }
-// }
-
-// function resetGame(eventObj) {
-//     document.location.reload()
-// }
+// NOTES for future work:
+// 
+// -- Code cleanup ---
+// Convert 0, 1, 2, -1, -2 into emptyCell, p1M, p1K, p2M, p2K
+// Replace white/blank tile reference with dark/light reference
+// 
+// -- Feature add ons ---
+// Add color scheme
+// Custom color scheme templates
+// Fully customizable color schemes
+// Hints on hover
+// Threat detection
+// Switch to International Draughts mode, with a 10x10 grid and updated ruleset
+// Render game board dynamically
+// Crystal clear set of rules
+// Custom rule options
+// Free movement and delete piece options
+// Random-move AI
+// Example game state saves to showcase rules and functionality
+// Sounds for movement, capture, promotion, victory and new game

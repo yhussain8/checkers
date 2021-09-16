@@ -41,7 +41,7 @@ p {
 }
 
 .grid {
-    border: 10px solid black;
+    border: 15px solid black;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
@@ -88,12 +88,14 @@ p {
     background-color: black;
     border-color: white;
     color: white;
+    border-style: double;
 }
 
 .playerTwo {
     background-color: white;
     border-color: black;
     color: black;
+    border-style: double;
 }
 
 
