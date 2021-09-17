@@ -1,9 +1,6 @@
 // OUTSTANDING ITEMS (# of 20 min sprints) Total 13/3 = 4 1/3 hours
 // .. restrict all moves if ANY pieces are able to attack
-// .. enable multi-jump attacks
 
-// .. (1) add win/loss logic ~ player wins when all opponent pieces are captured or blocked (i.e. losing player has no valid moves)
-// .. (1) show appropriate game alerts ~ whose move it is, how many pieces are left/captured by each player, game over/win/loss alert
 // .. (2) build README.file ~ include screenshots
 // .. (1) make notes for the presentation ~ fav code snipped, biggest challenge, learnings/takeaways
 // .. (2) final code review / clean up
@@ -20,15 +17,15 @@ let originalGameState = [
     [1, 0, 1, 0, 1, 0, 1, 0]
 ]
 
-let testingGameState = [
-    [0, 0, 0, -1, 0, -1, 0, 0],
-    [-1, 0, 1, 0, -1, 0, -1, 0],
-    [0, -1, 0, 0, 0, -1, 0, -1],
-    [0, 0, 0, 0, 1, 0, 0, 0],
-    [0, 0, 0, -1, 0, 0, 0, 0],
-    [1, 0, 1, 0, 1, 0, 1, 0],
-    [0, 1, 0, 1, 0, -1, 0, 1],
-    [0, 0, 1, 0, 1, 0, 0, 0]
+let exMultiJumpGameState = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [-1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
 let currentGameState = originalGameState
@@ -43,12 +40,14 @@ let destinationTiles = []
 let attackList = []
 let captureTiles = []
 let turn = "playerOne"
+let playerOnePieces = 0
+let playerTwoPieces = 0
+let winner = null
 
 let alertWindow = document.querySelector('.alert-area')
 
 
 function renderGameState(gameState) {
-    renderAlertWindow()
     gameState.forEach(function(row, rowNumber) {
         row.forEach(function(cellValue, cellNumber) {
             let newDivElement = document.createElement('div')
@@ -61,6 +60,19 @@ function renderGameState(gameState) {
             if (cellValue != 0) targetTile.appendChild(newDivElement)
         })
     })
+    countPieces(gameState)
+    renderAlertWindow()
+}
+
+function countPieces(state) {
+    playerOnePieces = 0
+    playerTwoPieces = 0
+    state.forEach(function(row, rowNumber) {
+        row.forEach(function(cellValue, cellNumber) {
+            if (state[rowNumber][cellNumber] > 0) playerOnePieces++
+            if (state[rowNumber][cellNumber] < 0) playerTwoPieces++
+        })
+    })
 }
 
 renderGameState(currentGameState)
@@ -70,6 +82,10 @@ renderGameState(currentGameState)
 function gridClick(eventObj) {
     
     let targetElement = eventObj.target
+
+    if (winner) {
+        return
+    }
 
     if ((isPieceInHand === false) && 
         (targetElement.classList.contains('piece')) &&
@@ -81,9 +97,14 @@ function gridClick(eventObj) {
         } else if (captureTiles.includes(targetElement)) {
             attackPiece(pieceInHand, targetElement)
             checkForPromotions()
-            switchPlayerTurn()
-            deactivatePiece(pieceInHand)
-            renderGameState(currentGameState)
+            activatePiece(pieceInHand)
+            if (attackList.length > 0) {
+                return
+            } else {
+                switchPlayerTurn()
+                deactivatePiece(pieceInHand)
+                renderGameState(currentGameState)
+            }
         } else if (destinationTiles.includes(targetElement)) {
             movePiece(pieceInHand, targetElement)
             checkForPromotions()
@@ -92,13 +113,28 @@ function gridClick(eventObj) {
             renderGameState(currentGameState)
         }
     }
+
+    checkForWinner()
+}
+
+function checkForWinner() {
+    if (playerOnePieces === 0) {
+        winner = true
+        alertWindow.innerHTML = '<p>White Wins The Game!</p>'
+    } else if (playerTwoPieces === 0) {
+        winner = true
+        alertWindow.innerHTML = '<p>Black Wins The Game!</p>'
+
+    }
 }
 
 function renderAlertWindow() {
+    alertWindow.innerHTML = ''
+    alertWindow.innerHTML = `<p>Black Pieces Remaining: ${playerOnePieces}<br>White Pieces Remaining: ${playerTwoPieces}</p>`
     if (turn === "playerOne") {
-        alertWindow.innerHTML = "<p>Player One (Black) Turn</p>"
+        alertWindow.innerHTML += "<p>Black Turn</p>"
     } else {
-        alertWindow.innerHTML = "<p>Player Two (White) Turn</p>"
+        alertWindow.innerHTML += "<p>White Turn</p>"
     }
 }
 
@@ -111,22 +147,29 @@ function switchPlayerTurn() {
 }
 
 function checkForPromotions() {
-    lastRow = currentGameState[0]
-    firstRow = currentGameState[7]
+    let lastRow = currentGameState[0]
+    let firstRow = currentGameState[7]
     
+    let pieceId = pieceInHand.parentNode.id
+
     lastRow.forEach(function(tileValue, tileNum) {
         if (tileValue === 1) {
             currentGameState[0][tileNum] = 2
+            pieceId = `0-${tileNum}`
         }
     })
 
     firstRow.forEach(function(tileValue, tileNum) {
         if (tileValue === -1) {
             currentGameState[7][tileNum] = -2
+            pieceId = `7-${tileNum}`
         }
     })
 
     renderGameState(currentGameState)
+    newTile = document.getElementById(pieceId)
+    newPiece = newTile.childNodes[0]
+    pieceInHand = newPiece
 }
 
 function attackPiece(targetPiece, targetDestination) {
@@ -140,9 +183,11 @@ function attackPiece(targetPiece, targetDestination) {
     pieceNotation = currentGameState[originLocation[0]][originLocation[1]]
     currentGameState[originLocation[0]][originLocation[1]] = 0
     currentGameState[destinationLocation[0]][destinationLocation[1]] = pieceNotation
-    targetDestination.appendChild(targetPiece)
     currentGameState[captureLocation[0]][captureLocation[1]] = 0
     renderGameState(currentGameState)
+    newTile = document.getElementById(`${destinationLocation[0]}-${destinationLocation[1]}`)
+    newPiece = newTile.childNodes[0]
+    pieceInHand = newPiece
 }
 
 function movePiece(targetPiece, targetDestination) {
@@ -151,7 +196,10 @@ function movePiece(targetPiece, targetDestination) {
     pieceNotation = currentGameState[originLocation[0]][originLocation[1]]
     currentGameState[originLocation[0]][originLocation[1]] = 0
     currentGameState[destinationLocation[0]][destinationLocation[1]] = pieceNotation
-    targetDestination.appendChild(targetPiece)
+    renderGameState(currentGameState)
+    newTile = document.getElementById(`${destinationLocation[0]}-${destinationLocation[1]}`)
+    newPiece = newTile.childNodes[0]
+    pieceInHand = newPiece
 }
 
 function activatePiece(targetPiece) {
@@ -170,11 +218,15 @@ function activatePiece(targetPiece) {
         captureTiles.push(captureTile)
     })
     
-    moveList.forEach(function(move) {
-        let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
-        destinationTile.classList.add('active')
-        destinationTiles.push(destinationTile)
-    })
+    if (attackList.length > 0) {
+        return
+    } else {
+        moveList.forEach(function(move) {
+            let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
+            destinationTile.classList.add('active')
+            destinationTiles.push(destinationTile)
+        })
+    }
 }
 
 function deactivatePiece(targetPiece) {
@@ -190,10 +242,10 @@ function deactivatePiece(targetPiece) {
 
     isPieceInHand = false
     pieceInHand = null
-    moveList = []
-    destinationTiles = []
     attackList = []
+    moveList = []
     captureTiles = []
+    destinationTiles = []
 }
 
 function buildAttackList(rowInput, columnInput) {
@@ -257,7 +309,11 @@ function attackAvailable(captureTile, jumpTile) {
     if (jumpRow < 0 || jumpRow > 7) return false
     if (jumpColumn < 0 || jumpColumn > 7) return false
 
-    if ((currentGameState[jumpRow][jumpColumn] === 0) && (currentGameState[captureRow][captureColumn] !== 0)) {
+    if ((turn === 'playerOne') && (currentGameState[jumpRow][jumpColumn] === 0) && (currentGameState[captureRow][captureColumn] < 0)) {
+        return true
+    }
+
+    if ((turn === 'playerTwo') && (currentGameState[jumpRow][jumpColumn] === 0) && (currentGameState[captureRow][captureColumn] > 0)) {
         return true
     }
 
