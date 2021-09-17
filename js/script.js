@@ -1,16 +1,13 @@
-// OUTSTANDING ITEMS (# of 20 min sprints) Total 16/3 = 5 1/3 hours
-// 1. (3) enable pieces to attack each other
-// 2. (1) enable promotions to king pieces
-// 3. (2) restrict moves based on piece/player type
-// 4. (2) restrict attacks based on piece/player type
-// .. (?) restrict all moves if ANY pieces are able to attack
+// OUTSTANDING ITEMS (# of 20 min sprints) Total 13/3 = 4 1/3 hours
+// .. restrict all moves if ANY pieces are able to attack
+// .. enable multi-jump attacks
 
-// 5. (1) add win/loss logic ~ player wins when all opponent pieces are captured or blocked (i.e. losing player has no valid moves)
-// 6. (1) show appropriate game alerts ~ whose move it is, how many pieces are left/captured by each player, game over/win/loss alert
-// 7. (2) build README.file ~ include screenshots
-// 8. (1) make notes for the presentation ~ fav code snipped, biggest challenge, learnings/takeaways
-// 9. (2) final code review / clean up
-// 10. (1) final push to git hub pages
+// .. (1) add win/loss logic ~ player wins when all opponent pieces are captured or blocked (i.e. losing player has no valid moves)
+// .. (1) show appropriate game alerts ~ whose move it is, how many pieces are left/captured by each player, game over/win/loss alert
+// .. (2) build README.file ~ include screenshots
+// .. (1) make notes for the presentation ~ fav code snipped, biggest challenge, learnings/takeaways
+// .. (2) final code review / clean up
+// .. (1) final push to git hub pages
 
 let originalGameState = [
     [0, -1, 0, -1, 0, -1, 0, -1],
@@ -24,19 +21,34 @@ let originalGameState = [
 ]
 
 let testingGameState = [
-    [0, -1, 0, -1, 0, -1, 0, 0],
-    [-1, 0, -1, 0, -1, 0, -1, 0],
-    [0, -1, 0, -1, 0, -1, 0, -1],
+    [0, 0, 0, -1, 0, -1, 0, 0],
+    [-1, 0, 1, 0, -1, 0, -1, 0],
+    [0, -1, 0, 0, 0, -1, 0, -1],
     [0, 0, 0, 0, 1, 0, 0, 0],
     [0, 0, 0, -1, 0, 0, 0, 0],
     [1, 0, 1, 0, 1, 0, 1, 0],
-    [0, 1, 0, 1, 0, 1, 0, 1],
-    [0, 0, 1, 0, 1, 0, 1, 0]
+    [0, 1, 0, 1, 0, -1, 0, 1],
+    [0, 0, 1, 0, 1, 0, 0, 0]
 ]
 
-let currentGameState = testingGameState
+let currentGameState = originalGameState
+
+let gridArea = document.querySelector('.grid')
+gridArea.addEventListener('click', gridClick)
+
+let isPieceInHand = false
+let pieceInHand = null
+let moveList = []
+let destinationTiles = []
+let attackList = []
+let captureTiles = []
+let turn = "playerOne"
+
+let alertWindow = document.querySelector('.alert-area')
+
 
 function renderGameState(gameState) {
+    renderAlertWindow()
     gameState.forEach(function(row, rowNumber) {
         row.forEach(function(cellValue, cellNumber) {
             let newDivElement = document.createElement('div')
@@ -53,36 +65,68 @@ function renderGameState(gameState) {
 
 renderGameState(currentGameState)
 
-let gridArea = document.querySelector('.grid')
-gridArea.addEventListener('click', gridClick)
-
-let isPieceInHand = false
-let pieceInHand = null
-let moveList = []
-let destinationTiles = []
-let attackList = []
-let captureTiles = []
-let playerOneTurn = true
-
 // CLICK ON GRID
 
 function gridClick(eventObj) {
     
     let targetElement = eventObj.target
 
-    if ((isPieceInHand === false) && (targetElement.classList.contains('piece'))) {
+    if ((isPieceInHand === false) && 
+        (targetElement.classList.contains('piece')) &&
+        (targetElement.classList.contains(turn))) {
         activatePiece(targetElement)
     } else if (isPieceInHand) {
         if (targetElement === pieceInHand) {
             deactivatePiece(targetElement)
         } else if (captureTiles.includes(targetElement)) {
             attackPiece(pieceInHand, targetElement)
+            checkForPromotions()
+            switchPlayerTurn()
             deactivatePiece(pieceInHand)
+            renderGameState(currentGameState)
         } else if (destinationTiles.includes(targetElement)) {
             movePiece(pieceInHand, targetElement)
+            checkForPromotions()
+            switchPlayerTurn()
             deactivatePiece(pieceInHand)
+            renderGameState(currentGameState)
         }
     }
+}
+
+function renderAlertWindow() {
+    if (turn === "playerOne") {
+        alertWindow.innerHTML = "<p>Player One (Black) Turn</p>"
+    } else {
+        alertWindow.innerHTML = "<p>Player Two (White) Turn</p>"
+    }
+}
+
+function switchPlayerTurn() {
+    if (turn === "playerOne") {
+        turn = "playerTwo"
+    } else {
+        turn = "playerOne"
+    }
+}
+
+function checkForPromotions() {
+    lastRow = currentGameState[0]
+    firstRow = currentGameState[7]
+    
+    lastRow.forEach(function(tileValue, tileNum) {
+        if (tileValue === 1) {
+            currentGameState[0][tileNum] = 2
+        }
+    })
+
+    firstRow.forEach(function(tileValue, tileNum) {
+        if (tileValue === -1) {
+            currentGameState[7][tileNum] = -2
+        }
+    })
+
+    renderGameState(currentGameState)
 }
 
 function attackPiece(targetPiece, targetDestination) {
@@ -116,8 +160,8 @@ function activatePiece(targetPiece) {
     pieceInHand.classList.add('active')
 
     let tileLocation = pieceInHand.parentNode.id.split('-')
-    attackList = buildAttackList(tileLocation[0], tileLocation[1])
     
+    attackList = buildAttackList(tileLocation[0], tileLocation[1])
     moveList = buildMoveList(tileLocation[0], tileLocation[1])
 
     attackList.forEach(function(attack) {
@@ -186,10 +230,18 @@ function buildAttackList(rowInput, columnInput) {
 
     attackList = []
 
-    if (attackUpLeft) attackList.push(jumpUpLeft)
-    if (attackUpRight) attackList.push(jumpUpRight)
-    if (attackDownLeft) attackList.push(jumpDownLeft)
-    if (attackDownRight) attackList.push(jumpDownRight)
+    if (pieceType === 1) {
+        if (attackUpLeft) attackList.push(jumpUpLeft)
+        if (attackUpRight) attackList.push(jumpUpRight)
+    } else if (pieceType === -1) {
+        if (attackDownLeft) attackList.push(jumpDownLeft)
+        if (attackDownRight) attackList.push(jumpDownRight)
+    } else if ((pieceType === 2) || (pieceType === -2)) {
+        if (attackUpLeft) attackList.push(jumpUpLeft)
+        if (attackUpRight) attackList.push(jumpUpRight)
+        if (attackDownLeft) attackList.push(jumpDownLeft)
+        if (attackDownRight) attackList.push(jumpDownRight)
+    }
 
     return attackList
 }
@@ -236,10 +288,18 @@ function buildMoveList(rowInput, columnInput) {
 
     moveList = []
 
-    if (moveUpLeft) moveList.push(upLeft)
-    if (moveUpRight) moveList.push(upRight)
-    if (moveDownLeft) moveList.push(downLeft)
-    if (moveDownRight) moveList.push(downRight)
+    if (pieceType === 1) {
+        if (moveUpLeft) moveList.push(upLeft)
+        if (moveUpRight) moveList.push(upRight)
+    } else if (pieceType === -1) {
+        if (moveDownLeft) moveList.push(downLeft)
+        if (moveDownRight) moveList.push(downRight)
+    } else if ((pieceType === 2) || (pieceType === -2)) {
+        if (moveUpLeft) moveList.push(upLeft)
+        if (moveUpRight) moveList.push(upRight)
+        if (moveDownLeft) moveList.push(downLeft)
+        if (moveDownRight) moveList.push(downRight)
+    }   
 
     return moveList
 }
