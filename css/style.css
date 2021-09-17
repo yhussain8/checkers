@@ -110,3 +110,7 @@ button {
     background-color: white;
     font-family: 'Dosis', sans-serif;
 }
+
+.active {
+    border: 5px dotted;
+}
