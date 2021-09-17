@@ -6,4 +6,4 @@ My attempts at recreating the checkers board game as a static web application, u
 
 Link to WikiHow's YouTube video on [How to Play Checkers](https://www.youtube.com/watch?v=MOW9k_C4vFU)
 
-<img src="img/screenshot.png" height="50%" width="50%" />
+<img src="img/screenshot.png" height="70%" width="70%" />
