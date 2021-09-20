@@ -1,11 +1,3 @@
-// OUTSTANDING ITEMS (# of 20 min sprints) Total 13/3 = 4 1/3 hours
-// .. restrict all moves if ANY pieces are able to attack
-
-// .. (2) build README.file ~ include screenshots
-// .. (1) make notes for the presentation ~ fav code snipped, biggest challenge, learnings/takeaways
-// .. (2) final code review / clean up
-// .. (1) final push to git hub pages
-
 let originalGameState = [
     [0, -1, 0, -1, 0, -1, 0, -1],
     [-1, 0, -1, 0, -1, 0, -1, 0],
@@ -17,18 +9,41 @@ let originalGameState = [
     [1, 0, 1, 0, 1, 0, 1, 0]
 ]
 
-let exMultiJumpGameState = [
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [-1, 0, 0, 0, 0, 0, 0, 0],
+// use for multi-jump example
+let exGameState1 = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+let exGameState2 = [
+    [0, 0, 0, 0, 0, 0, 0, -1],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, -1, 0, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-let currentGameState = originalGameState
+let exGameState3 = [
+    [0, -1, 0, 0, 0, 0, 0, -1],
+    [1, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+let currentGameState = exGameState3
 
 let gridArea = document.querySelector('.grid')
 gridArea.addEventListener('click', gridClick)
@@ -86,7 +101,6 @@ function gridClick(eventObj) {
     if (winner) {
         return
     }
-
     if ((isPieceInHand === false) && 
         (targetElement.classList.contains('piece')) &&
         (targetElement.classList.contains(turn))) {
@@ -113,7 +127,6 @@ function gridClick(eventObj) {
             renderGameState(currentGameState)
         }
     }
-
     checkForWinner()
 }
 
@@ -126,6 +139,41 @@ function checkForWinner() {
         alertWindow.innerHTML = '<p>Black Wins The Game!</p>'
 
     }
+    anyMoveAvailable = scanForMoves()
+    if ((!anyMoveAvailable) && (turn === "playerOne")) {
+        winner = true
+        alertWindow.innerHTML = '<p>White Wins The Game!</p>'
+    } else if ((!anyMoveAvailable) && (turn === "playerTwo")) {
+        winner = true
+        alertWindow.innerHTML = '<p>Black Wins The Game!</p>'
+    }
+}
+
+function scanForMoves() {
+    if (turn === "playerOne") {
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                pieceOnTile = currentGameState[i][j]
+                if (pieceOnTile > 0) {
+                    attackScan = buildAttackList(i, j)
+                    moveScan = buildMoveList(i, j)
+                    if ((attackScan.length > 0) || (moveScan.length > 0)) return true
+                }
+            }
+        }
+    } else if (turn === "playerTwo") {
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                pieceOnTile = currentGameState[i][j]
+                if (pieceOnTile < 0) {
+                    attackScan = buildAttackList(i, j)
+                    moveScan = buildMoveList(i, j)
+                    if ((attackScan.length > 0) || (moveScan.length > 0)) return true
+                }
+            }
+        }
+    }
+    return false
 }
 
 function renderAlertWindow() {
@@ -206,6 +254,9 @@ function activatePiece(targetPiece) {
     isPieceInHand = true
     pieceInHand = targetPiece
     pieceInHand.classList.add('active')
+
+    // check every piece of current player to determine if any of them have an attack available
+    // if so, force code below to only work if piece selected is one of the pieces with an attacking move
 
     let tileLocation = pieceInHand.parentNode.id.split('-')
     
@@ -316,7 +367,6 @@ function attackAvailable(captureTile, jumpTile) {
     if ((turn === 'playerTwo') && (currentGameState[jumpRow][jumpColumn] === 0) && (currentGameState[captureRow][captureColumn] > 0)) {
         return true
     }
-
     return false
 }
 
@@ -370,32 +420,9 @@ function moveAvailable(move) {
     return false
 }
 
-// NEW GAME BUTTON
-
 let newGameButton = document.querySelector('button')
 newGameButton.addEventListener('click', resetGame)
 
 function resetGame(eventObj) {
     document.location.reload()
 }
-
-// NOTES for future work:
-// 
-// -- Code cleanup ---
-// Convert 0, 1, 2, -1, -2 into emptyCell, p1M, p1K, p2M, p2K
-// Replace white/blank tile reference with dark/light reference
-// 
-// -- Feature add ons ---
-// Add color scheme
-// Custom color scheme templates
-// Fully customizable color schemes
-// Hints on hover
-// Threat detection
-// Switch to International Draughts mode, with a 10x10 grid and updated ruleset
-// Render game board dynamically
-// Crystal clear set of rules
-// Custom rule options
-// Free movement and delete piece options
-// Random-move AI
-// Example game state saves to showcase rules and functionality
-// Sounds for movement, capture, promotion, victory and new game
