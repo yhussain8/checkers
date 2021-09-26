@@ -43,7 +43,7 @@ let exGameState3 = [
     [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-let currentGameState = exGameState3
+let currentGameState = originalGameState
 
 let gridArea = document.querySelector('.grid')
 gridArea.addEventListener('click', gridClick)
