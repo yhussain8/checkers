@@ -49,10 +49,14 @@ p {
     width: 60vh;
 }
 
-.cell {
+.white-tile, .black-tile {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.black-tile {
+    background-color: darkgray;
 }
 
 .piece, .king {
@@ -70,37 +74,32 @@ p {
     font-size: 3vh;
 }
 
-.king.playerTwo {
+.king.white {
     background-image: url('../img/white-king.svg');
     background-size: 80%;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-.king.playerOne {
+.king.black {
     background-image: url('../img/black-king.svg');
     background-size: 80%;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-.playerOne {
+.black {
     background-color: black;
     border-color: white;
     color: white;
     border-style: double;
 }
 
-.playerTwo {
+.white {
     background-color: white;
     border-color: black;
     color: black;
     border-style: double;
-}
-
-
-.black {
-    background-color: darkgray;
 }
 
 button {
