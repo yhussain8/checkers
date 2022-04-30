@@ -7,9 +7,9 @@
 // ...comments should serve a purpose for my future self; otherwise delete
 // 4. do I really need moveList & captureList to be global variables? 
 // ...instead could they be returned by generateMoves() and stay within local scope
-// 5. Need to check/confirm that once a piece is promoted to king;
+// 5. need to check/confirm that once a piece is promoted to king;
 // ...its turn is immediately ended even if it has another capturing opporunity
-
+// 6. perhaps terminology should distinguish between step-move vs. capture-move
 
 // 0 => empty tile, 1 => black piece, 2 => white piece
 let initialBoardSetup = [
@@ -47,7 +47,19 @@ let gameState2 = [
     [0, 0, 0, 0, 0, 0, 0, 0]
 ]
 
-let currentGameState = gameState2
+// force captures
+let gameState3 = [
+    [0, -1, 0, 0, 0, 0, 0, 0],
+    [1, 0, -1, 0, 0, 0, -1, 0],
+    [0, 0, 0, 1, 0, 1, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, -1, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0]
+]
+
+let currentGameState = gameState3
 let gameOver = false
 let playerTurn = 'black'
 let blackPieceCount
@@ -161,6 +173,8 @@ function gridClick(eventObj) {
 // activate piece and its potential moves
 function activatePiece(targetPiece) {
 
+    let anyCaptureAvailable = scanForCaptures()
+
     isPieceActive = true
     activePiece = targetPiece
     activePiece.classList.add('active')  // enables styling
@@ -174,7 +188,8 @@ function activatePiece(targetPiece) {
         captureTiles.push(captureTile)
     })
     
-    if (captureList.length > 0) {
+    // if (captureList.length > 0) {
+    if (anyCaptureAvailable) {
         return
     } else {
         moveList.forEach(function(moveLocation) {
@@ -186,9 +201,10 @@ function activatePiece(targetPiece) {
 }
 
 // generate moves for a piece at the given board location
-// if mode = true; return true as soon as the first valid move is found
-// if mode = false; update moveList & captureList with every valid move found
-function generateMoves(rowIndex, columnIndex, mode = false) {
+// if mode = 0; update moveList & captureList with every valid move found
+// if mode = 1; return true as soon as the first valid move (includes capture) is found
+// if mode = 2; return true as soon as the first valid capture is found
+function generateMoves(rowIndex, columnIndex, mode = 0) {
 
     let row = Number(rowIndex)
     let column = Number(columnIndex)
@@ -232,31 +248,31 @@ function generateMoves(rowIndex, columnIndex, mode = false) {
 
     if (pieceType === 1) {
 
-        if (moveUpLeft) {if (mode) {return true} else {moveList.push(stepUpLeft)}}
-        if (moveUpRight) {if (mode) {return true} else {moveList.push(stepUpRight)}}
+        if (moveUpLeft) {if (mode === 1) {return true} else {moveList.push(stepUpLeft)}}
+        if (moveUpRight) {if (mode === 1) {return true} else {moveList.push(stepUpRight)}}
 
-        if (captureUpLeft) {if (mode) {return true} else {captureList.push(jumpUpLeft)}}
-        if (captureUpRight) {if (mode) {return true} else {captureList.push(jumpUpRight)}}
+        if (captureUpLeft) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpUpLeft)}}
+        if (captureUpRight) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpUpRight)}}
 
     } else if (pieceType === -1) {
 
-        if (moveDownLeft) {if (mode) {return true} else {moveList.push(stepDownLeft)}}
-        if (moveDownRight) {if (mode) {return true} else { moveList.push(stepDownRight)}}
+        if (moveDownLeft) {if (mode === 1) {return true} else {moveList.push(stepDownLeft)}}
+        if (moveDownRight) {if (mode === 1) {return true} else {moveList.push(stepDownRight)}}
 
-        if (captureDownLeft) {if (mode) {return true} else { captureList.push(jumpDownLeft)}}
-        if (captureDownRight) {if (mode) {return true} else {captureList.push(jumpDownRight)}} 
+        if (captureDownLeft) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpDownLeft)}}
+        if (captureDownRight) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpDownRight)}} 
 
     } else if ((pieceType === 2) || (pieceType === -2)) {
 
-        if (moveUpLeft) {if (mode) {return true} else {moveList.push(stepUpLeft)}} 
-        if (moveUpRight) {if (mode) {return true} else {moveList.push(stepUpRight)}}
-        if (moveDownLeft) {if (mode) {return true} else {moveList.push(stepDownLeft)}}
-        if (moveDownRight) {if (mode) {return true} else {moveList.push(stepDownRight)}}
+        if (moveUpLeft) {if (mode === 1) {return true} else {moveList.push(stepUpLeft)}} 
+        if (moveUpRight) {if (mode === 1) {return true} else {moveList.push(stepUpRight)}}
+        if (moveDownLeft) {if (mode === 1) {return true} else {moveList.push(stepDownLeft)}}
+        if (moveDownRight) {if (mode === 1) {return true} else {moveList.push(stepDownRight)}}
 
-        if (captureUpLeft) {if (mode) {return true} else {captureList.push(jumpUpLeft)}}
-        if (captureUpRight) {if (mode) {return true} else {captureList.push(jumpUpRight)}}
-        if (captureDownLeft) {if (mode) {return true} else {captureList.push(jumpDownLeft)}}
-        if (captureDownRight) {if (mode) {return true} else {captureList.push(jumpDownRight)}}
+        if (captureUpLeft) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpUpLeft)}}
+        if (captureUpRight) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpUpRight)}}
+        if (captureDownLeft) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpDownLeft)}}
+        if (captureDownRight) {if ((mode === 1) || (mode === 2)) {return true} else {captureList.push(jumpDownRight)}}
     }
 }
 
@@ -328,9 +344,24 @@ function scanForMoves() {
         for (let column = 0; column < 8; column++) {
             pieceType = currentGameState[row][column]
             if ((playerTurn === 'black') && (pieceType > 0)) {
-                if (generateMoves(row, column, mode = true)) return true
+                if (generateMoves(row, column, mode = 1)) return true
             } else if ((playerTurn === 'white') && (pieceType < 0)) {
-                if (generateMoves(row, column, mode = true)) return true
+                if (generateMoves(row, column, mode = 1)) return true
+            }
+        }
+    }
+    return false
+}
+
+// return true if the current player has at least one capture available
+function scanForCaptures() {
+    for (let row = 0; row < 8; row++) {
+        for (let column = 0; column < 8; column++) {
+            pieceType = currentGameState[row][column]
+            if ((playerTurn === 'black') && (pieceType > 0)) {
+                if (generateMoves(row, column, mode = 2)) return true
+            } else if ((playerTurn === 'white') && (pieceType < 0)) {
+                if (generateMoves(row, column, mode = 2)) return true
             }
         }
     }
@@ -387,6 +418,8 @@ function capturePiece(destinationTile) {
     currentGameState[currentLocation[0]][currentLocation[1]] = 0
     currentGameState[jumpLocation[0]][jumpLocation[1]] = pieceType
     currentGameState[captureLocation[0]][captureLocation[1]] = 0
+
+    document.getElementById(`${jumpLocation[0]}-${jumpLocation[1]}`).classList.remove('active')
 
     renderGameState(currentGameState)
     activePiece = document.getElementById(`${jumpLocation[0]}-${jumpLocation[1]}`).childNodes[0]
