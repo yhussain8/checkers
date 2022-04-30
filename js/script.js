@@ -7,6 +7,9 @@
 // ...comments should serve a purpose for my future self; otherwise delete
 // 4. do I really need moveList & captureList to be global variables? 
 // ...instead could they be returned by generateMoves() and stay within local scope
+// 5. Need to check/confirm that once a piece is promoted to king;
+// ...its turn is immediately ended even if it has another capturing opporunity
+
 
 // 0 => empty tile, 1 => black piece, 2 => white piece
 let initialBoardSetup = [
@@ -55,7 +58,7 @@ let activePiece
 let moveList = []
 let captureList = []
 let captureTiles = []
-let destinationTiles = []
+let moveTiles = []
 
 let alertWindow = document.querySelector('.alert-area')
 let gridArea = document.querySelector('.grid')
@@ -127,27 +130,27 @@ function gridClick(eventObj) {
 
         // deactivate if selected again
         if (playerSelection === activePiece) {
-            deactivatePiece(playerSelection)
+            deactivatePiece()
 
         // capture enemy piece
         } else if (captureTiles.includes(playerSelection)) {
-            capturePiece(activePiece, playerSelection)
+            capturePiece(playerSelection)
             checkForPromotions()
             activatePiece(activePiece)  // (***) is this second activation required or would it be simpler to just generateMoves()
             if (captureList.length > 0) {
                 return
             } else {
                 switchPlayerTurn()
-                deactivatePiece(activePiece)
+                deactivatePiece()
                 renderGameState(currentGameState)
             }
 
         // move player piece
-        } else if (destinationTiles.includes(playerSelection)) {
-            movePiece(activePiece, playerSelection)
+        } else if (moveTiles.includes(playerSelection)) {
+            movePiece(playerSelection)
             checkForPromotions()
             switchPlayerTurn()
-            deactivatePiece(activePiece)
+            deactivatePiece()
             renderGameState(currentGameState)
         }
     }
@@ -157,6 +160,7 @@ function gridClick(eventObj) {
 
 // activate piece and its potential moves
 function activatePiece(targetPiece) {
+
     isPieceActive = true
     activePiece = targetPiece
     activePiece.classList.add('active')  // enables styling
@@ -173,16 +177,18 @@ function activatePiece(targetPiece) {
     if (captureList.length > 0) {
         return
     } else {
-        moveList.forEach(function(move) {
-            let destinationTile = document.getElementById(`${move[0]}-${move[1]}`)
-            destinationTile.classList.add('active')
-            destinationTiles.push(destinationTile)
+        moveList.forEach(function(moveLocation) {
+            let moveTile = document.getElementById(`${moveLocation[0]}-${moveLocation[1]}`)
+            moveTile.classList.add('active')
+            moveTiles.push(moveTile)
         })
     }
 }
 
-// generate potential moves for a piece at the given board location
-function generateMoves(rowIndex, columnIndex) {
+// generate moves for a piece at the given board location
+// if mode = true; return true as soon as the first valid move is found
+// if mode = false; update moveList & captureList with every valid move found
+function generateMoves(rowIndex, columnIndex, mode = false) {
 
     let row = Number(rowIndex)
     let column = Number(columnIndex)
@@ -226,31 +232,31 @@ function generateMoves(rowIndex, columnIndex) {
 
     if (pieceType === 1) {
 
-        if (moveUpLeft) moveList.push(stepUpLeft)
-        if (moveUpRight) moveList.push(stepUpRight)
+        if (moveUpLeft) {if (mode) {return true} else {moveList.push(stepUpLeft)}}
+        if (moveUpRight) {if (mode) {return true} else {moveList.push(stepUpRight)}}
 
-        if (captureUpLeft) captureList.push(jumpUpLeft)
-        if (captureUpRight) captureList.push(jumpUpRight)
+        if (captureUpLeft) {if (mode) {return true} else {captureList.push(jumpUpLeft)}}
+        if (captureUpRight) {if (mode) {return true} else {captureList.push(jumpUpRight)}}
 
     } else if (pieceType === -1) {
 
-        if (moveDownLeft) moveList.push(stepDownLeft)
-        if (moveDownRight) moveList.push(stepDownRight)
+        if (moveDownLeft) {if (mode) {return true} else {moveList.push(stepDownLeft)}}
+        if (moveDownRight) {if (mode) {return true} else { moveList.push(stepDownRight)}}
 
-        if (captureDownLeft) captureList.push(jumpDownLeft)
-        if (captureDownRight) captureList.push(jumpDownRight)
+        if (captureDownLeft) {if (mode) {return true} else { captureList.push(jumpDownLeft)}}
+        if (captureDownRight) {if (mode) {return true} else {captureList.push(jumpDownRight)}} 
 
     } else if ((pieceType === 2) || (pieceType === -2)) {
 
-        if (moveUpLeft) moveList.push(stepUpLeft)
-        if (moveUpRight) moveList.push(stepUpRight)
-        if (moveDownLeft) moveList.push(stepDownLeft)
-        if (moveDownRight) moveList.push(stepDownRight)
+        if (moveUpLeft) {if (mode) {return true} else {moveList.push(stepUpLeft)}} 
+        if (moveUpRight) {if (mode) {return true} else {moveList.push(stepUpRight)}}
+        if (moveDownLeft) {if (mode) {return true} else {moveList.push(stepDownLeft)}}
+        if (moveDownRight) {if (mode) {return true} else {moveList.push(stepDownRight)}}
 
-        if (captureUpLeft) captureList.push(jumpUpLeft)
-        if (captureUpRight) captureList.push(jumpUpRight)
-        if (captureDownLeft) captureList.push(jumpDownLeft)
-        if (captureDownRight) captureList.push(jumpDownRight)
+        if (captureUpLeft) {if (mode) {return true} else {captureList.push(jumpUpLeft)}}
+        if (captureUpRight) {if (mode) {return true} else {captureList.push(jumpUpRight)}}
+        if (captureDownLeft) {if (mode) {return true} else {captureList.push(jumpDownLeft)}}
+        if (captureDownRight) {if (mode) {return true} else {captureList.push(jumpDownRight)}}
     }
 }
 
@@ -316,27 +322,15 @@ function checkForWinner() {
     }
 }
 
-// refactor such that there is only one instance of the nested for loop
-// inside which we use a combo of playerTurn and pieceType to determine outcome
+// return true if the current player has at least one move available
 function scanForMoves() {
-    if (playerTurn === 'black') {
-        for (let row = 0; row < 8; row++) {
-            for (let column = 0; column < 8; column++) {
-                pieceType = currentGameState[row][column]
-                if (pieceType > 0) {
-                    generateMoves(row, column)
-                    if ((captureList.length > 0) || (moveList.length > 0)) return true
-                }
-            }
-        }
-    } else if (playerTurn === 'white') {
-        for (let row = 0; row < 8; row++) {
-            for (let column = 0; column < 8; column++) {
-                pieceType = currentGameState[row][column]
-                if (pieceType < 0) {
-                    generateMoves(row, column)
-                    if ((captureList.length > 0) || (moveList.length > 0)) return true
-                }
+    for (let row = 0; row < 8; row++) {
+        for (let column = 0; column < 8; column++) {
+            pieceType = currentGameState[row][column]
+            if ((playerTurn === 'black') && (pieceType > 0)) {
+                if (generateMoves(row, column, mode = true)) return true
+            } else if ((playerTurn === 'white') && (pieceType < 0)) {
+                if (generateMoves(row, column, mode = true)) return true
             }
         }
     }
@@ -351,79 +345,81 @@ function switchPlayerTurn() {
     }
 }
 
+// scans the last row for each player to promote all men that have reached it 
 function checkForPromotions() {
-    let lastRow = currentGameState[0]
-    let firstRow = currentGameState[7]
-    
+
+    // holds the HTML ID of the active piece, so that we can reselect it once the game rerenders the board
+    // (rerendering the board invalidates the reference to the object currently held inside activePiece)
     let pieceId = activePiece.parentNode.id
 
-    lastRow.forEach(function(tileValue, tileNum) {
-        if (tileValue === 1) {
-            currentGameState[0][tileNum] = 2
-            pieceId = `0-${tileNum}`
+    for (let column = 0; column < 8; column++) {
+        if (playerTurn === 'black') {
+            pieceType = currentGameState[0][column]
+            if (pieceType === 1) {
+                currentGameState[0][column] = 2
+                pieceId = `0-${column}`
+                break
+            }
+        } else if (playerTurn === 'white') {
+            pieceType = currentGameState[7][column]
+            if (pieceType === -1) {
+                currentGameState[7][column] = -2
+                pieceId = `7-${column}`
+                break
+            }
         }
-    })
-
-    firstRow.forEach(function(tileValue, tileNum) {
-        if (tileValue === -1) {
-            currentGameState[7][tileNum] = -2
-            pieceId = `7-${tileNum}`
-        }
-    })
-
+    }
     renderGameState(currentGameState)
-    newTile = document.getElementById(pieceId)
-    newPiece = newTile.childNodes[0]
-    activePiece = newPiece
+    activePiece = document.getElementById(pieceId).childNodes[0]
 }
 
-function capturePiece(targetPiece, targetDestination) {
-    originLocation = targetPiece.parentNode.id.split('-')
-    destinationLocation = targetDestination.id.split('-')
+// execute the capture command
+function capturePiece(destinationTile) {
 
-    captureLocationRow = (Number(originLocation[0]) + Number(destinationLocation[0])) / 2
-    captureLocationColumn = (Number(originLocation[1]) + Number(destinationLocation[1])) / 2
+    currentLocation = activePiece.parentNode.id.split('-')
+    jumpLocation = destinationTile.id.split('-')
+
+    captureLocationRow = (Number(currentLocation[0]) + Number(jumpLocation[0])) / 2
+    captureLocationColumn = (Number(currentLocation[1]) + Number(jumpLocation[1])) / 2
     captureLocation = [captureLocationRow, captureLocationColumn]
     
-    pieceNotation = currentGameState[originLocation[0]][originLocation[1]]
-    currentGameState[originLocation[0]][originLocation[1]] = 0
-    currentGameState[destinationLocation[0]][destinationLocation[1]] = pieceNotation
+    pieceType = currentGameState[currentLocation[0]][currentLocation[1]]
+    currentGameState[currentLocation[0]][currentLocation[1]] = 0
+    currentGameState[jumpLocation[0]][jumpLocation[1]] = pieceType
     currentGameState[captureLocation[0]][captureLocation[1]] = 0
+
     renderGameState(currentGameState)
-    newTile = document.getElementById(`${destinationLocation[0]}-${destinationLocation[1]}`)
-    newPiece = newTile.childNodes[0]
-    activePiece = newPiece
+    activePiece = document.getElementById(`${jumpLocation[0]}-${jumpLocation[1]}`).childNodes[0]
 }
 
-function movePiece(targetPiece, targetDestination) {
-    originLocation = targetPiece.parentNode.id.split('-')
-    destinationLocation = targetDestination.id.split('-')
-    pieceNotation = currentGameState[originLocation[0]][originLocation[1]]
-    currentGameState[originLocation[0]][originLocation[1]] = 0
-    currentGameState[destinationLocation[0]][destinationLocation[1]] = pieceNotation
+// execute the move command
+function movePiece(destinationTile) {
+
+    currentLocation = activePiece.parentNode.id.split('-')
+    moveLocation = destinationTile.id.split('-')
+
+    pieceType = currentGameState[currentLocation[0]][currentLocation[1]]
+    currentGameState[currentLocation[0]][currentLocation[1]] = 0
+    currentGameState[moveLocation[0]][moveLocation[1]] = pieceType
+
     renderGameState(currentGameState)
-    newTile = document.getElementById(`${destinationLocation[0]}-${destinationLocation[1]}`)
-    newPiece = newTile.childNodes[0]
-    activePiece = newPiece
+    activePiece = document.getElementById(`${moveLocation[0]}-${moveLocation[1]}`).childNodes[0]
 }
 
-function deactivatePiece(targetPiece) {
-    targetPiece.classList.remove('active')
+function deactivatePiece() {
 
-    captureTiles.forEach(function(captureTile) {
-        captureTile.classList.remove('active')
-    })
-
-    destinationTiles.forEach(function(destinationTile) {
-        destinationTile.classList.remove('active')
-    })
+    activePiece.classList.remove('active')
+    captureTiles.forEach(function(captureTile) {captureTile.classList.remove('active')})
+    moveTiles.forEach(function(destinationTile) {destinationTile.classList.remove('active')})
 
     isPieceActive = false
     activePiece = null
+
+    // (***) are each of these below really necessary? review to see if redundant
     captureList = []
     moveList = []
     captureTiles = []
-    destinationTiles = []
+    moveTiles = []
 }
 
 // resets the game by reloading the page
