@@ -10,6 +10,7 @@
 // 5. need to check/confirm that once a piece is promoted to king;
 // ...its turn is immediately ended even if it has another capturing opporunity
 // 6. perhaps terminology should distinguish between step-move vs. capture-move
+// TEST
 
 // 0 => empty tile, 1 => black piece, 2 => white piece
 let initialBoardSetup = [
